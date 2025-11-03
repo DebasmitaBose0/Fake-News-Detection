@@ -41,15 +41,22 @@ It intelligently evaluates news articles, gives **verification confidence**, and
 
 ## 🏗️ Project Structure
 
+```text
 📂 Fake-News-Verifier/
-├── main_beautiful.py       # Main Streamlit app
-├── run_bg.py               # Launch script with background image
-├── test_ai.py              # AI connection tester
-├── .env                    # API keys (ignored in Git)
-├── .gitignore              # Prevents sensitive data from being committed
-├── requirements.txt        # Project dependencies
+│
+├── main_beautiful.py          # Main Streamlit app
+├── run_bg.py                  # Launch script with background image
+├── test_ai.py                 # AI connection tester
+│
+├── .env                       # API keys (ignored in Git)
+├── .gitignore                 # Prevents sensitive data from being committed
+├── requirements.txt           # Project dependencies
+│
 └── assets/
-└── transparent_bg_sample.svg
+    └── transparent_bg_sample.svg
+
+```
+
 
 ---
 
