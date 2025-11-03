@@ -47,7 +47,7 @@ class AppConfig:
         "📺 Anandabazar Patrika - https://www.anandabazar.com",
         "📺 The Statesman - https://www.thestatesman.com",
         "📺 The Telegraph - https://www.telegraphindia.com",
-        "📺 Alt News (Fact-checker) - https://www.altnews.in",
+        "� Alt News (Fact-checker) - https://www.altnews.in",
         "🔍 Boom Live (Fact-checker) - https://www.boomlive.in",
         "🔍 The Quint WebQoof - https://www.thequint.com/news/webqoof"
     ]
@@ -405,13 +405,22 @@ class BeautifulUI:
             z-index: 1 !important;
         }
         
-        /* Hide empty vertical blocks */
-        div[data-testid="stVerticalBlock"]:empty {
+        /* Hide empty vertical blocks - but NOT in sidebar */
+        div[data-testid="stVerticalBlock"]:empty:not([data-testid="stSidebar"] *) {
             display: none !important;
         }
         
-        div[data-testid="stVerticalBlock"] > div:empty {
+        div[data-testid="stVerticalBlock"] > div:empty:not([data-testid="stSidebar"] *) {
             display: none !important;
+        }
+        
+        /* Ensure sidebar content is always visible */
+        [data-testid="stSidebar"] div[data-testid="stVerticalBlock"],
+        [data-testid="stSidebar"] div[data-testid="stVerticalBlock"] > div {
+            display: block !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         
         /* TEXT INPUTS - Natural paper-like forms */
@@ -575,7 +584,7 @@ class BeautifulUI:
                 🕵️‍♂️ Fake News Detector
             </h1>
             <p style='color: #5d4037; font-size: 0.9rem; margin-top: 0.5rem; font-family: Open Sans, sans-serif; font-weight: 500;'>
-                AI-Powered Truth Engine • Made by Debasmita X Manisha X Joita
+                AI-Powered Truth Checkup • Made by Debasmita X Manisha X Joita
             </p>
             <hr style='width: 70%; margin: 1.5rem auto; border: none; height: 1px; background: linear-gradient(90deg, transparent, rgba(212, 197, 169, 0.8), transparent);'>
         </div>
@@ -635,8 +644,13 @@ class BeautifulUI:
             - NDTV
             - The Hindu
             - Indian Express
+            - India Today
+            - Anandabazar Patrika
+            - The Statesman
+            - The Telegraph
             - Alt News (Fact-checker)
             - Boom Live (Fact-checker)
+            - The Quint WebQoof (Fact-checker)
             """)
             
             st.markdown("---")
