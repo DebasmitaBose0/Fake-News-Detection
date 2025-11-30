@@ -7,6 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
+from urllib.parse import quote_plus
 
 # Load environment variables
 load_dotenv()
@@ -116,8 +117,14 @@ class IndianNewsVerifier:
             return self._create_error_response("AI engine not ready")
         
         try:
-            # Create comprehensive analysis prompt
-            analysis_prompt = self._create_analysis_prompt(news_claim)
+            # Fetch live news evidence (helps avoid outdated/hallucinated answers)
+            try:
+                live_news = self._fetch_live_news(news_claim)
+            except Exception:
+                live_news = []
+
+            # Create comprehensive analysis prompt (include live evidence)
+            analysis_prompt = self._create_analysis_prompt(news_claim, live_news)
             
             # Get AI response
             response = self.model.generate_content(analysis_prompt)
@@ -131,8 +138,25 @@ class IndianNewsVerifier:
         except Exception as e:
             return self._create_error_response(f"Analysis failed: {str(e)}")
     
-    def _create_analysis_prompt(self, news_claim):
-        """Create a comprehensive prompt for Indian news analysis"""
+    def _create_analysis_prompt(self, news_claim, live_evidence=None):
+        """Create a comprehensive prompt for Indian news analysis
+
+        Optionally include `live_evidence` (list or string) to provide recent headlines/links.
+        """
+        evidence_block = ""
+        if live_evidence:
+            if isinstance(live_evidence, list):
+                # Convert list items to numbered lines
+                lines = []
+                for i, it in enumerate(live_evidence, start=1):
+                    title = it.get('title', '').strip()
+                    link = it.get('link', '').strip()
+                    pub = it.get('pubDate', '').strip()
+                    lines.append(f"{i}. {title} | {pub} | {link}")
+                evidence_block = "\nLIVE_NEWS_EVIDENCE:\n" + "\n".join(lines)
+            else:
+                evidence_block = f"\nLIVE_NEWS_EVIDENCE:\n{str(live_evidence)}"
+
         return f"""
         🇮🇳 INDIAN NEWS FACT-CHECK ANALYSIS
         =====================================
@@ -168,7 +192,59 @@ class IndianNewsVerifier:
         
         CONCLUSION:
         [Final assessment with reasoning]
+        {evidence_block}
         """
+
+    def _fetch_live_news(self, query, max_results=6, country='IN'):
+        """Fetch recent news headlines and links from Google News RSS for the given query.
+
+        Returns a list of dicts: [{'title':..., 'link':..., 'pubDate':...}, ...]
+        This is a lightweight, no-key approach to provide recent evidence to the AI.
+        """
+        try:
+            if not query or not query.strip():
+                return []
+
+            # Build Google News RSS search URL
+            # Use quote_plus to encode query terms
+            encoded = quote_plus(query)
+            # Limit to country/region if possible (gl param), default to IN
+            rss_url = f"https://news.google.com/rss/search?q={encoded}&hl=en-IN&gl={country}&ceid={country}:en"
+
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (compatible; NewsFetcher/1.0; +https://example.com)'
+            }
+
+            resp = requests.get(rss_url, headers=headers, timeout=10)
+            resp.raise_for_status()
+
+            soup = BeautifulSoup(resp.content, 'xml')
+            items = soup.find_all('item')
+
+            results = []
+            for item in items[:max_results]:
+                title = item.title.get_text() if item.title else ''
+                link = item.link.get_text() if item.link else ''
+                pubDate = item.pubDate.get_text() if item.pubDate else ''
+                results.append({'title': title, 'link': link, 'pubDate': pubDate})
+
+            return results
+        except Exception:
+            return []
+
+    def _summarize_live_news(self, live_news):
+        """Create a short text summary of live news items to include in the AI prompt."""
+        if not live_news:
+            return "No recent matching news items found."
+
+        parts = []
+        for i, it in enumerate(live_news, start=1):
+            title = it.get('title', '').strip()
+            link = it.get('link', '').strip()
+            pub = it.get('pubDate', '').strip()
+            parts.append(f"{i}. {title} | {pub} | {link}")
+
+        return "\n".join(parts)
     
     def _parse_ai_response(self, ai_text):
         """Parse AI response into structured format"""
